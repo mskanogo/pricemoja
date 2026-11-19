@@ -1,0 +1,12 @@
+{
+  "name": "PriceMoja",
+  "short_name": "PriceMoja",
+  "description": "Know the fair price of transport, groceries and market goods before you pay.",
+  "start_url": "./",
+  "display": "standalone",
+  "background_color": "#FFFBE6",
+  "theme_color": "#F8E56B",
+  "icons": [
+    { "src": "icons/icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ]
+}
