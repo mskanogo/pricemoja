@@ -3,8 +3,7 @@
   --brand: #B45309; --brand-dark: #8F4207;
   --ink: #2A2110; --muted: #5C5238; --page: #FFFFFF; --card: #FFFFFF; --line: #E9DFA6;
   --fair: #2E7D32; --fair-dark: #1B5E20; --alert: #B83A22; --track: #EFE8C0; --focus: #1D4ED8;
-  font-family: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-}
+  font-family: "Poppins", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;}
 *, *::before, *::after { box-sizing: border-box; }
 [hidden] { display: none !important; }
 body { margin: 0; background: var(--page); color: var(--ink); line-height: 1.5; }
