@@ -1,0 +1,30 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Each person can read their own profile. New profiles start as "contributor".
+    match /users/{uid} {
+      allow read: if request.auth != null && request.auth.uid == uid;
+      allow create: if request.auth != null && request.auth.uid == uid
+                    && request.resource.data.role == 'contributor';
+      allow update: if request.auth != null && request.auth.uid == uid
+                    && request.resource.data.role == resource.data.role;
+    }
+
+    // Photos on price cards: anyone can see them, signed-in users can add them,
+    // and only the person who added a photo can replace or delete it.
+    match /priceImages/{imageId} {
+      allow read: if true;
+      allow create: if request.auth != null
+                    && request.resource.data.uploadedBy == request.auth.uid
+                    && request.resource.data.dataUrl is string
+                    && request.resource.data.dataUrl.size() < 500000;
+      allow update: if request.auth != null
+                    && resource.data.uploadedBy == request.auth.uid
+                    && request.resource.data.uploadedBy == request.auth.uid
+                    && request.resource.data.dataUrl is string
+                    && request.resource.data.dataUrl.size() < 500000;
+      allow delete: if request.auth != null && resource.data.uploadedBy == request.auth.uid;
+    }
+  }
+}
