@@ -3,7 +3,8 @@
   --brand: #B45309; --brand-dark: #8F4207;
   --ink: #2A2110; --muted: #5C5238; --page: #FFFFFF; --card: #FFFFFF; --line: #E9DFA6;
   --fair: #2E7D32; --fair-dark: #1B5E20; --alert: #B83A22; --track: #EFE8C0; --focus: #1D4ED8;
-  font-family: "Poppins", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;}
+  font-family: "Poppins", system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+}
 *, *::before, *::after { box-sizing: border-box; }
 [hidden] { display: none !important; }
 body { margin: 0; background: var(--page); color: var(--ink); line-height: 1.5; }
@@ -13,7 +14,7 @@ a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible
 .skip:focus { left: 1rem; top: 1rem; z-index: 10; padding: .5rem 1rem; background: #fff; }
 .wrap { max-width: 72rem; margin: 0 auto; padding: 0 clamp(1rem, 4vw, 3rem); }
 
-h1 { max-width: 14em; margin: 0 0 1rem; font-size: clamp(2rem, 5vw, 3.25rem); line-height: 1.1; letter-spacing: -.025em; font-weight: 800; }
+h1 { max-width: 14em; margin: 0 0 1rem; font-size: clamp(2rem, 5vw, 3.25rem); line-height: 1.1; letter-spacing: -.02em; font-weight: 800; }
 h2 { margin: 0 0 1rem; font-size: 1.5rem; }
 h3 { margin: 0 0 .25rem; font-size: 1.0625rem; }
 .lede { max-width: 34em; margin: 0 0 1.5rem; font-size: 1.125rem; color: var(--muted); }
@@ -78,3 +79,12 @@ label { font-weight: 600; }
 
 footer { padding: 1.5rem 0; color: #EDE6C8; font-size: .9375rem; background: var(--ink); }
 footer p { margin: 0; }
+
+/* Photos on price cards */
+.card__media { position: relative; display: grid; place-items: center; aspect-ratio: 3 / 2; margin: -1.1rem -1.1rem .9rem; overflow: hidden; background: var(--sun-soft); border-radius: 12px 12px 0 0; }
+.card__img { position: absolute; inset: 0; width: 100%; height: 100%; max-width: none; object-fit: cover; }
+.card__media .btn { position: absolute; right: .5rem; bottom: .5rem; }
+.card__media .btn:focus-within { outline: 3px solid var(--focus); outline-offset: 2px; }
+.btn--small { padding: .35rem .75rem; font-size: .8125rem; }
+.card__status { min-height: 0; margin-bottom: .25rem; font-size: .875rem; }
+.photo-hint { margin: -.5rem 0 1rem; }

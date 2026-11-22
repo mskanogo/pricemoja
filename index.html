@@ -9,9 +9,9 @@
   <link rel="manifest" href="manifest.json">
   <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
   <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="css/styles.css">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css?v2">
 </head>
 <body>
   <a class="skip" href="#main">Skip to content</a>
@@ -31,7 +31,7 @@
     <nav class="main-nav" aria-label="Main">
       <a href="#about" data-nav="about">About</a>
       <a href="#prices" data-nav="prices">Prices</a>
-      <a href="#signup" data-nav="signup">Sign up</a>
+      <a href="#signup" data-nav="signup" id="nav-account">Sign up</a>
     </nav>
   </header>
 
@@ -101,27 +101,48 @@
             <input id="price-search" type="search" placeholder="Search this category">
             <span class="tag">Sample data</span>
           </div>
+          <p class="note photo-hint" id="photo-hint">Sign up to add photos to grocery and market cards.</p>
           <div class="grid" id="price-list" aria-live="polite"></div>
         </div>
       </section>
     </div>
 
-    <!-- Page 3: Sign up -->
+    <!-- Page 3: Sign up and log in -->
     <div data-view="signup" hidden>
       <section class="band">
         <div class="wrap panel">
-          <h1>Sign up</h1>
-          <p class="lede">Create an account to share what you paid and confirm other people's prices. You can browse without one.</p>
-          <form class="signup" id="signup-form" novalidate>
-            <div class="field"><label for="su-name">Full name</label><input id="su-name" name="name" type="text" autocomplete="name" required></div>
-            <div class="field"><label for="su-email">Email</label><input id="su-email" name="email" type="email" autocomplete="email" required></div>
-            <div class="field"><label for="su-password">Password</label><input id="su-password" name="password" type="password" autocomplete="new-password" minlength="8" required><small class="note">At least 8 characters.</small></div>
-            <div class="field"><label for="su-language">Preferred language</label>
-              <select id="su-language" name="language"><option>English</option><option>Kiswahili</option><option>Français</option><option>Kinyarwanda</option></select>
+          <div id="auth-guest">
+            <h1>Join PriceMoja</h1>
+            <p class="lede">Create an account to add photos and share prices. You can browse without one.</p>
+            <div class="tabs" role="group" aria-label="Account">
+              <button class="tab" type="button" data-auth-tab="signup" aria-pressed="true">Sign up</button>
+              <button class="tab" type="button" data-auth-tab="login" aria-pressed="false">Log in</button>
             </div>
-            <button class="btn btn--primary" type="submit">Create account</button>
-            <p class="form-status" id="signup-status" role="status"></p>
-          </form>
+            <form class="signup" id="signup-form" novalidate>
+              <div class="field"><label for="su-name">Full name</label><input id="su-name" name="name" type="text" autocomplete="name" required></div>
+              <div class="field"><label for="su-email">Email</label><input id="su-email" name="email" type="email" autocomplete="email" required></div>
+              <div class="field"><label for="su-password">Password</label><input id="su-password" name="password" type="password" autocomplete="new-password" minlength="8" required><small class="note">At least 8 characters.</small></div>
+              <div class="field"><label for="su-language">Preferred language</label>
+                <select id="su-language" name="language"><option>English</option><option>Kiswahili</option><option>Français</option><option>Kinyarwanda</option></select>
+              </div>
+              <button class="btn btn--primary" type="submit">Create account</button>
+              <p class="form-status" role="status"></p>
+            </form>
+            <form class="signup" id="login-form" novalidate hidden>
+              <div class="field"><label for="li-email">Email</label><input id="li-email" name="email" type="email" autocomplete="email" required></div>
+              <div class="field"><label for="li-password">Password</label><input id="li-password" name="password" type="password" autocomplete="current-password" required></div>
+              <button class="btn btn--primary" type="submit">Log in</button>
+              <p class="form-status" role="status"></p>
+            </form>
+          </div>
+          <div id="auth-user" hidden>
+            <h1>You are signed in</h1>
+            <p class="lede">Signed in as <strong id="auth-email"></strong>. Go to Prices and use Add photo on any grocery or market card to upload a picture.</p>
+            <div class="actions">
+              <a class="btn btn--primary" href="#prices">Go to Prices</a>
+              <button class="btn" id="logout" type="button">Log out</button>
+            </div>
+          </div>
         </div>
       </section>
     </div>
