@@ -79,7 +79,8 @@ function priceCard(p) {
     media.append(label);
   }
 
-  card.append(media, status, el("h3", "", p.name), el("p", "note", p.place));
+  const hasPhoto = p.category !== "transport"; // transport fares don't need pictures
+  card.append(...(hasPhoto ? [media, status] : []), el("h3", "", p.name), el("p", "note", p.place));
   card.append(el("p", "price num", `KES ${p.low.toLocaleString()} to ${p.high.toLocaleString()}`));
   if (p.service) card.append(el("span", "tag tag--service", "Service"), " ");
   p.sources.forEach((s) => card.append(el("span", s === "PPRA" ? "tag tag--ppra" : "tag", s), " "));
@@ -150,6 +151,8 @@ onUser((user) => {
   guestPanel.hidden = Boolean(user);
   userPanel.hidden = !user;
   document.getElementById("auth-email").textContent = user ? user.email : "";
-  photoHint.textContent = user ? "Use Add photo on a card to upload a picture." : "Sign up to add photos to price cards.";
+  photoHint.textContent = user
+    ? "Use Add photo on a grocery or market card to upload a picture."
+    : "Sign up to add photos to grocery and market cards.";
   renderPrices();
 });
