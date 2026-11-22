@@ -26,5 +26,26 @@ service cloud.firestore {
                     && request.resource.data.dataUrl.size() < 500000;
       allow delete: if request.auth != null && resource.data.uploadedBy == request.auth.uid;
     }
+
+    // Shared prices: anyone can read them, signed-in users can share their own,
+    // and only the person who shared a price can withdraw it.
+    match /submissions/{submissionId} {
+      allow read: if true;
+      allow create: if request.auth != null
+                    && request.resource.data.keys().hasOnly(['category', 'item', 'amount', 'currency', 'location', 'userId', 'userName', 'status', 'createdAt'])
+                    && request.resource.data.userId == request.auth.uid
+                    && request.resource.data.category in ['transport', 'groceries', 'market']
+                    && request.resource.data.item is string
+                    && request.resource.data.item.size() > 0 && request.resource.data.item.size() <= 80
+                    && request.resource.data.location is string
+                    && request.resource.data.location.size() > 0 && request.resource.data.location.size() <= 80
+                    && request.resource.data.userName is string && request.resource.data.userName.size() <= 80
+                    && request.resource.data.amount is number
+                    && request.resource.data.amount > 0 && request.resource.data.amount < 100000000
+                    && request.resource.data.currency in ['KES', 'RWF', 'UGX', 'TZS', 'USD']
+                    && request.resource.data.status == 'pending'
+                    && request.resource.data.createdAt == request.time;
+      allow delete: if request.auth != null && resource.data.userId == request.auth.uid;
+    }
   }
 }

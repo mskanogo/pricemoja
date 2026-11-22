@@ -12,9 +12,10 @@ const messages = {
   "auth/invalid-credential": "The email or password is incorrect.",
   "auth/too-many-requests": "Too many attempts. Please wait a moment and try again.",
   "auth/network-request-failed": "No connection. Check your internet and try again.",
-  "auth/operation-not-allowed": "Email sign-in is not switched on in the Firebase console yet."
+  "auth/operation-not-allowed": "Email sign-in is not switched on in the Firebase console yet.",
+  "permission-denied": "Not allowed. Make sure you are logged in and the Firestore rules are published."
 };
-export const friendlyError = (err) => messages[err.code] || `Something went wrong (${err.code || err.message}). Please try again.`;
+export const friendlyError = (err) => messages[err.code] || "Something went wrong. Please try again.";
 
 export async function signUp({ name, email, password, language }) {
   const cred = await createUserWithEmailAndPassword(auth, email, password);
