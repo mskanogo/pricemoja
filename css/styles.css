@@ -82,9 +82,14 @@ footer p { margin: 0; }
 
 /* Photos on price cards */
 .card__media { position: relative; display: grid; place-items: center; aspect-ratio: 3 / 2; margin: -1.1rem -1.1rem .9rem; overflow: hidden; background: var(--sun-soft); border-radius: 12px 12px 0 0; }
-.card__img { position: absolute; inset: 0; width: 100%; height: 100%; max-width: none; object-fit: cover; }
+.card__img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
 .card__media .btn { position: absolute; right: .5rem; bottom: .5rem; }
 .card__media .btn:focus-within { outline: 3px solid var(--focus); outline-offset: 2px; }
 .btn--small { padding: .35rem .75rem; font-size: .8125rem; }
 .card__status { min-height: 0; margin-bottom: .25rem; font-size: .875rem; }
 .photo-hint { margin: -.5rem 0 1rem; }
+
+/* Share a price */
+.row2 { display: grid; gap: 1rem; grid-template-columns: 2fr 1fr; }
+.mine-title { margin-top: 2.5rem; }
+.card > .btn { margin-top: .5rem; }

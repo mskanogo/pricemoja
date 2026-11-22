@@ -31,6 +31,7 @@
     <nav class="main-nav" aria-label="Main">
       <a href="#about" data-nav="about">About</a>
       <a href="#prices" data-nav="prices">Prices</a>
+      <a href="#share" data-nav="share">Share a price</a>
       <a href="#signup" data-nav="signup" id="nav-account">Sign up</a>
     </nav>
   </header>
@@ -45,7 +46,7 @@
             <p class="lede">New to a city? Sellers and drivers often quote newcomers a higher price. PriceMoja shows what transport, groceries and market goods should cost, and where each price comes from.</p>
             <div class="actions">
               <a class="btn btn--primary" href="#prices">See the prices</a>
-              <a class="btn" href="#signup">Sign up to share a price</a>
+              <a class="btn" href="#share">Share a price</a>
             </div>
           </div>
           <img class="hero__logo" src="icons/logo.svg" width="320" height="320" alt="PriceMoja logo: know the fair price before you pay">
@@ -99,7 +100,7 @@
           <div class="toolbar">
             <label class="sr-only" for="price-search">Search this category</label>
             <input id="price-search" type="search" placeholder="Search this category">
-            <span class="tag">Sample data</span>
+            <span class="tag">Includes sample data</span>
           </div>
           <p class="note photo-hint" id="photo-hint">Sign up to add photos to grocery and market cards.</p>
           <div class="grid" id="price-list" aria-live="polite"></div>
@@ -107,7 +108,38 @@
       </section>
     </div>
 
-    <!-- Page 3: Sign up and log in -->
+    <!-- Page 3: Share a price -->
+    <div data-view="share" hidden>
+      <section class="band">
+        <div class="wrap panel">
+          <h1>Share a price</h1>
+          <p class="lede">Tell others what you paid, so the next newcomer knows what is fair. Please share after the purchase, not while you are negotiating.</p>
+          <div id="share-guest">
+            <p class="note">You need an account to share a price.</p>
+            <p><a class="btn btn--primary" href="#signup">Sign up or log in</a></p>
+          </div>
+          <div id="share-user" hidden>
+            <form class="signup" id="share-form" novalidate>
+              <div class="field"><label for="sh-category">Category</label>
+                <select id="sh-category" name="category"><option value="transport">Transport fares</option><option value="groceries">Groceries</option><option value="market">Market goods and services</option></select>
+              </div>
+              <div class="field"><label for="sh-item">Item or route</label><input id="sh-item" name="itemName" type="text" maxlength="80" placeholder="Tomatoes, 1 kg, or moto from town to the airport" required></div>
+              <div class="row2">
+                <div class="field"><label for="sh-amount">Amount you paid</label><input id="sh-amount" name="amount" type="number" min="1" step="any" inputmode="decimal" required></div>
+                <div class="field"><label for="sh-currency">Currency</label><select id="sh-currency" name="currency"><option>KES</option><option>RWF</option><option>UGX</option><option>TZS</option><option>USD</option></select></div>
+              </div>
+              <div class="field"><label for="sh-location">Location</label><input id="sh-location" name="location" type="text" maxlength="80" placeholder="City or market" required></div>
+              <button class="btn btn--primary" type="submit">Share price</button>
+              <p class="form-status" role="status"></p>
+            </form>
+            <h2 class="mine-title">Your shared prices</h2>
+            <div class="grid" id="my-prices"></div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <!-- Page 4: Sign up and log in -->
     <div data-view="signup" hidden>
       <section class="band">
         <div class="wrap panel">
