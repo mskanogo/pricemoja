@@ -14,7 +14,7 @@ const messages = {
   "auth/network-request-failed": "No connection. Check your internet and try again.",
   "auth/operation-not-allowed": "Email sign-in is not switched on in the Firebase console yet."
 };
-export const friendlyError = (err) => messages[err.code] || "Something went wrong. Please try again.";
+export const friendlyError = (err) => messages[err.code] || `Something went wrong (${err.code || err.message}). Please try again.`;
 
 export async function signUp({ name, email, password, language }) {
   const cred = await createUserWithEmailAndPassword(auth, email, password);
