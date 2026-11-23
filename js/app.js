@@ -4,6 +4,7 @@ import { signUp, logIn, logOut, onUser, friendlyError } from "./auth.js";
 import { imageKey, loadImages, compress, saveImage } from "./images.js";
 import { loadSubmissions, addSubmission, withdrawSubmission } from "./submissions.js";
 import { samplePrices } from "./sample-prices.js";
+import { slug, groupSubmissions } from "./fair-price.js";
 
 /* ---------- Page navigation ---------- */
 const views = [...document.querySelectorAll("[data-view]")];
@@ -93,20 +94,37 @@ function priceCard(p) {
   const hasPhoto = p.category !== "transport"; // transport fares don't need pictures
   card.append(...(hasPhoto ? [media, status] : []), el("h3", "", p.name), el("p", "note", p.place));
   card.append(el("p", "price num", priceText(p)));
+  if (p.count) {
+    card.append(el("p", "note", `Median ${p.currency} ${p.median.toLocaleString()} from ${p.count} shared ${p.count === 1 ? "price" : "prices"}`));
+    if (p.count < 3) card.append(el("p", "note", "Only a few reports so far. More shared prices make this range more reliable."));
+  }
+  if (p.reference) card.append(el("p", "note", `Reference range: KES ${p.reference.low.toLocaleString()} to ${p.reference.high.toLocaleString()}`));
   if (p.service) card.append(el("span", "tag tag--service", "Service"), " ");
   p.sources.forEach((s) => card.append(el("span", s === "PPRA" ? "tag tag--ppra" : "tag", s), " "));
   return card;
 }
 
-const toRow = (s) => ({
-  category: s.category, name: s.item, place: `${s.location} (shared by ${s.userName || "a user"})`,
-  low: s.amount, high: s.amount, currency: s.currency, sources: ["Community"]
-});
+// Combines shared prices into one fair range per item. Sample prices fill in for items nobody has shared yet.
+function buildRows() {
+  const keyOf = (category, name) => `${category}|${slug(name)}`;
+  const reference = new Map(samplePrices.map((p) => [keyOf(p.category, p.name), p]));
+  const groups = groupSubmissions(community);
+  const shared = new Set(groups.map((g) => keyOf(g.category, g.name)));
+
+  const fromCommunity = groups.map((g) => {
+    const ref = reference.get(keyOf(g.category, g.name));
+    return {
+      category: g.category, name: ref ? ref.name : g.name, place: ref ? ref.place : "Shared by the community",
+      low: Math.round(g.low), high: Math.round(g.high), median: Math.round(g.median), count: g.count, currency: g.currency,
+      sources: ref ? [...new Set([...ref.sources, "Community"])] : ["Community"], service: ref ? ref.service : false, reference: ref
+    };
+  });
+  return [...fromCommunity, ...samplePrices.filter((p) => !shared.has(keyOf(p.category, p.name)))];
+}
 
 function renderPrices() {
   const query = searchBox.value.trim().toLowerCase();
-  const all = [...community.map(toRow), ...samplePrices];
-  const rows = all.filter((p) => p.category === category && p.name.toLowerCase().includes(query));
+  const rows = buildRows().filter((p) => p.category === category && p.name.toLowerCase().includes(query));
   list.replaceChildren(...(rows.length ? rows.map(priceCard) : [el("p", "note", `No prices match "${searchBox.value.trim()}" in this category.`)]));
 }
 
