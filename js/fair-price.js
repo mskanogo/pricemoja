@@ -24,13 +24,32 @@ export function summarise(amounts) {
   };
 }
 
+// Counts the confirmations, disputes and flags for every shared price: { priceId: { up, down, flags } }.
+export function tally(votes, flags) {
+  const result = {};
+  const entry = (id) => (result[id] ??= { up: 0, down: 0, flags: 0 });
+  votes.forEach((v) => { if (v.value === 1) entry(v.submissionId).up += 1; else entry(v.submissionId).down += 1; });
+  flags.forEach((f) => { entry(f.submissionId).flags += 1; });
+  return result;
+}
+
+// A price is left out of the fair range once it has 3 flags, or 2 more disputes than confirmations.
+export const isCounted = (t) => !t || (t.flags < 3 && t.down - t.up < 2);
+
 // Groups shared prices by category, item and currency, and gives each group its fair range.
-export function groupSubmissions(submissions) {
+// Every price is kept in `items` so people can review it, but only counted prices shape the range.
+export function groupSubmissions(submissions, tallies = {}) {
   const groups = new Map();
   for (const s of submissions) {
     const key = `${s.category}|${slug(s.item)}|${s.currency}`;
-    if (!groups.has(key)) groups.set(key, { category: s.category, name: s.item, currency: s.currency, amounts: [] });
-    groups.get(key).amounts.push(s.amount);
+    if (!groups.has(key)) groups.set(key, { category: s.category, name: s.item, currency: s.currency, items: [], amounts: [] });
+    const group = groups.get(key);
+    const counted = isCounted(tallies[s.id]);
+    group.items.push({ id: s.id, amount: s.amount, location: s.location, userName: s.userName, userId: s.userId, counted });
+    if (counted) group.amounts.push(s.amount);
   }
-  return [...groups.values()].map((g) => ({ category: g.category, name: g.name, currency: g.currency, ...summarise(g.amounts) }));
+  return [...groups.values()].map((g) => ({
+    category: g.category, name: g.name, currency: g.currency, items: g.items,
+    ...(g.amounts.length ? summarise(g.amounts) : { count: 0, median: 0, low: 0, high: 0 })
+  }));
 }
