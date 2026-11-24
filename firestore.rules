@@ -63,6 +63,24 @@ service cloud.firestore {
       allow delete: if request.auth != null && resource.data.userId == request.auth.uid;
     }
 
+    // Official reference prices (for example PPRA). Anyone can read them, only moderators can change them.
+    match /referencePrices/{refId} {
+      allow read: if true;
+      allow create, update: if isModerator()
+                    && request.resource.data.keys().hasOnly(['category', 'name', 'low', 'high', 'currency', 'source', 'updatedBy', 'updatedAt'])
+                    && request.resource.data.category in ['transport', 'groceries', 'market']
+                    && request.resource.data.name is string
+                    && request.resource.data.name.size() > 0 && request.resource.data.name.size() <= 80
+                    && request.resource.data.low is number && request.resource.data.high is number
+                    && request.resource.data.low > 0 && request.resource.data.low <= request.resource.data.high
+                    && request.resource.data.high < 100000000
+                    && request.resource.data.currency in ['KES', 'RWF', 'UGX', 'TZS', 'USD']
+                    && request.resource.data.source == 'PPRA'
+                    && request.resource.data.updatedBy == request.auth.uid
+                    && request.resource.data.updatedAt == request.time;
+      allow delete: if isModerator();
+    }
+
     // Flags: the person who flagged, or a moderator, can remove one.
     match /flags/{flagId} {
       allow read: if true;

@@ -4,7 +4,8 @@ import { signUp, logIn, logOut, onUser, loadRole, friendlyError } from "./auth.j
 import { imageKey, loadImages, compress, saveImage } from "./images.js";
 import { loadSubmissions, addSubmission, withdrawSubmission } from "./submissions.js";
 import { samplePrices } from "./sample-prices.js";
-import { slug, groupSubmissions, tally } from "./fair-price.js";
+import { slug, groupSubmissions, tally, parseReferenceList } from "./fair-price.js";
+import { loadReferences, saveReferences, removeReference } from "./reference.js";
 import { reputationFor } from "./reputation.js";
 import { loadVotes, loadFlags, setVote, clearVote, addFlag, removeFlag } from "./reviews.js";
 
@@ -50,6 +51,7 @@ const openCards = new Set(); // cards whose review list is open
 let allVotes = []; // every vote and flag, for the moderator page
 let allFlags = [];
 let isModerator = false;
+let references = []; // official reference prices added by moderators
 
 async function uploadPhoto(file, item, key, status) {
   if (!file) return;
@@ -109,7 +111,16 @@ function priceCard(p) {
     if (p.count < 3) card.append(el("p", "note", "Only a few reports so far. More shared prices make this range more reliable."));
   }
   if (p.items && !p.count) card.append(el("p", "note", "Every shared price for this item has been disputed or flagged."));
-  if (p.reference) card.append(el("p", "note", `Sample reference range: KES ${p.reference.low.toLocaleString()} to ${p.reference.high.toLocaleString()}`));
+  if (p.reference) {
+    const r = p.reference;
+    const cur = r.currency || "KES";
+    card.append(el("p", "note", `${r.official ? "Reference range (PPRA)" : "Sample reference range"}: ${cur} ${r.low.toLocaleString()} to ${r.high.toLocaleString()}`));
+    if (r.official && p.count && p.currency === cur) {
+      card.append(el("p", "note", p.median > r.high ? `Community median is ${cur} ${(p.median - r.high).toLocaleString()} above the reference range.`
+        : p.median < r.low ? `Community median is ${cur} ${(r.low - p.median).toLocaleString()} below the reference range.`
+        : "Community median is within the reference range."));
+    }
+  }
   if (p.service) card.append(el("span", "tag tag--service", "Service"), " ");
   p.sources.forEach((s) => card.append(el("span", s === "PPRA" ? "tag tag--ppra" : s === "Sample" ? "tag tag--sample" : "tag", s), " "));
   if (p.items) card.append(reviewList(p));
@@ -209,10 +220,15 @@ async function refreshReviews() {
   renderPrices();
 }
 
-// Combines shared prices into one fair range per item. Sample prices fill in for items nobody has shared yet.
+// Combines shared prices into one fair range per item. Reference prices (official ones replace samples)
+// fill in for items nobody has shared yet.
 function buildRows() {
   const keyOf = (category, name) => `${category}|${slug(name)}`;
   const reference = new Map(samplePrices.map((p) => [keyOf(p.category, p.name), p]));
+  references.forEach((r) => reference.set(keyOf(r.category, r.name), {
+    category: r.category, name: r.name, place: "Official reference price", low: r.low, high: r.high,
+    currency: r.currency, sources: ["PPRA"], official: true
+  }));
   const groups = groupSubmissions(community, tallies);
   const shared = new Set(groups.map((g) => keyOf(g.category, g.name)));
 
@@ -224,7 +240,8 @@ function buildRows() {
       sources: ref ? [...new Set([...ref.sources, "Community"])] : ["Community"], service: ref ? ref.service : false, reference: ref
     };
   });
-  return [...fromCommunity, ...samplePrices.filter((p) => !shared.has(keyOf(p.category, p.name)))];
+  const unshared = [...reference.values()].filter((p) => !shared.has(keyOf(p.category, p.name)));
+  return [...fromCommunity, ...unshared];
 }
 
 function renderPrices() {
@@ -310,6 +327,8 @@ const modPanel = document.getElementById("mod-panel");
 const modDenied = document.getElementById("mod-denied");
 const modStats = document.getElementById("mod-stats");
 const modList = document.getElementById("mod-list");
+const refForm = document.getElementById("ref-form");
+const refView = document.getElementById("ref-view");
 
 function updateModerator() {
   document.getElementById("nav-moderate").hidden = !isModerator;
@@ -354,6 +373,43 @@ function renderModerator() {
     return stat;
   }));
   modList.replaceChildren(...(flagged.length ? flagged.map(modCard) : [el("p", "note", "No flagged prices. Nothing to review.")]));
+  refView.replaceChildren(...(references.length ? references.map(referenceCard) : [el("p", "note", "No reference prices imported yet.")]));
+}
+
+function referenceCard(r) {
+  const card = el("article", "card");
+  const status = el("p", "note");
+  status.setAttribute("role", "status");
+  const actions = el("div", "review__actions");
+  actions.append(reviewButton("Remove", () => removeReferencePrice(r, status)));
+  card.append(
+    el("h3", "", r.name),
+    el("p", "note", categoryNames[r.category] || r.category),
+    el("p", "price num", `${r.currency} ${r.low.toLocaleString()} to ${r.high.toLocaleString()}`),
+    el("span", "tag tag--ppra", "PPRA"),
+    actions, status
+  );
+  return card;
+}
+
+async function removeReferencePrice(r, status) {
+  if (!window.confirm("Remove this reference price?")) return;
+  try {
+    await removeReference(r.id);
+    await refreshReferences();
+  } catch (err) {
+    status.textContent = friendlyError(err);
+  }
+}
+
+async function refreshReferences() {
+  try {
+    references = await loadReferences();
+  } catch (err) {
+    console.warn("Could not load reference prices. Check your Firestore rules.", err.code || err);
+  }
+  renderPrices();
+  renderModerator();
 }
 
 async function removeAsModerator(s, status) {
@@ -414,6 +470,12 @@ bindForm(shareForm, async (f) => {
   });
   await refreshCommunity();
 }, "Thank you! Your price was shared and now appears on the Prices page.");
+bindForm(refForm, async (f) => {
+  const { rows, errors } = parseReferenceList(f.priceList.value);
+  if (errors.length) throw Object.assign(new Error("Invalid list"), { userMessage: errors.slice(0, 3).join(" ") });
+  await saveReferences(rows, f.currency.value, auth.currentUser.uid);
+  await refreshReferences();
+}, "Reference prices imported. They now appear on the Prices page.");
 
 /* ---------- Account state ---------- */
 const guestPanel = document.getElementById("auth-guest");
@@ -446,3 +508,4 @@ onUser((user) => {
 });
 
 refreshCommunity();
+refreshReferences();
