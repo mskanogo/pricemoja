@@ -5,6 +5,7 @@ import { imageKey, loadImages, compress, saveImage } from "./images.js";
 import { loadSubmissions, addSubmission, withdrawSubmission } from "./submissions.js";
 import { samplePrices } from "./sample-prices.js";
 import { slug, groupSubmissions, tally } from "./fair-price.js";
+import { reputationFor } from "./reputation.js";
 import { loadVotes, loadFlags, setVote, clearVote, addFlag, removeFlag } from "./reviews.js";
 
 /* ---------- Page navigation ---------- */
@@ -199,6 +200,7 @@ async function refreshReviews() {
   tallies = tally(votes, flags);
   myVotes = Object.fromEntries(votes.filter((v) => v.userId === uid).map((v) => [v.submissionId, v.value]));
   myFlags = new Set(flags.filter((f) => f.userId === uid).map((f) => f.submissionId));
+  renderReputation();
   renderPrices();
 }
 
@@ -276,6 +278,25 @@ function renderMine() {
   const user = auth.currentUser;
   const mine = user ? community.filter((s) => s.userId === user.uid) : [];
   myList.replaceChildren(...(mine.length ? mine.map(mineCard) : [el("p", "note", "You have not shared any prices yet.")]));
+  renderReputation();
+}
+
+/* ---------- Reputation and badges ---------- */
+function renderReputation() {
+  const user = auth.currentUser;
+  if (!user) return;
+  const rep = reputationFor(user.uid, community, tallies);
+  document.getElementById("rep-score").textContent = rep.score;
+  document.getElementById("rep-summary").textContent =
+    `${rep.shared} shared, ${rep.verified} verified, ${rep.confirmed} confirmations, ${rep.disputed} disputes and ${rep.flagged} flags received.`;
+  document.getElementById("rep-badges").replaceChildren(...rep.badges.map((b) => {
+    const item = el("li", b.earned ? "badge-item badge-item--earned" : "badge-item");
+    item.append(el("strong", "", b.name), el("span", "note", b.earned ? "Earned" : b.detail));
+    return item;
+  }));
+  document.getElementById("rep-next").textContent = rep.next
+    ? `${rep.next.needed} more verified ${rep.next.needed === 1 ? "price" : "prices"} to earn "${rep.next.name}".`
+    : "You have earned every badge. Thank you for helping newcomers!";
 }
 
 /* ---------- Forms (sign up, log in, share a price) ---------- */
