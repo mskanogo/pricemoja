@@ -2,7 +2,6 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Each person can read their own profile. New profiles start as "contributor".
     match /users/{uid} {
       allow read: if request.auth != null && request.auth.uid == uid;
       allow create: if request.auth != null && request.auth.uid == uid
@@ -11,8 +10,6 @@ service cloud.firestore {
                     && request.resource.data.role == resource.data.role;
     }
 
-    // Photos on price cards: anyone can see them, signed-in users can add them,
-    // and only the person who added a photo can replace or delete it.
     match /priceImages/{imageId} {
       allow read: if true;
       allow create: if request.auth != null
@@ -27,8 +24,6 @@ service cloud.firestore {
       allow delete: if request.auth != null && resource.data.uploadedBy == request.auth.uid;
     }
 
-    // Shared prices: anyone can read them, signed-in users can share their own,
-    // and only the person who shared a price can withdraw it.
     match /submissions/{submissionId} {
       allow read: if true;
       allow create: if request.auth != null
@@ -45,6 +40,32 @@ service cloud.firestore {
                     && request.resource.data.currency in ['KES', 'RWF', 'UGX', 'TZS', 'USD']
                     && request.resource.data.status == 'pending'
                     && request.resource.data.createdAt == request.time;
+      allow delete: if request.auth != null && resource.data.userId == request.auth.uid;
+    }
+
+    // Confirm or dispute a shared price. One vote per person per price, never on your own price.
+    match /votes/{voteId} {
+      allow read: if true;
+      allow create, update: if request.auth != null
+                    && request.resource.data.keys().hasOnly(['submissionId', 'userId', 'value', 'createdAt'])
+                    && voteId == request.resource.data.submissionId + '_' + request.auth.uid
+                    && request.resource.data.userId == request.auth.uid
+                    && request.resource.data.value in [1, -1]
+                    && request.resource.data.createdAt == request.time
+                    && get(/databases/$(database)/documents/submissions/$(request.resource.data.submissionId)).data.userId != request.auth.uid;
+      allow delete: if request.auth != null && resource.data.userId == request.auth.uid;
+    }
+
+    // Flag a shared price as spam or fraud. One flag per person per price, never on your own price.
+    match /flags/{flagId} {
+      allow read: if true;
+      allow create: if request.auth != null
+                    && request.resource.data.keys().hasOnly(['submissionId', 'userId', 'reason', 'createdAt'])
+                    && flagId == request.resource.data.submissionId + '_' + request.auth.uid
+                    && request.resource.data.userId == request.auth.uid
+                    && request.resource.data.reason in ['spam', 'fraud']
+                    && request.resource.data.createdAt == request.time
+                    && get(/databases/$(database)/documents/submissions/$(request.resource.data.submissionId)).data.userId != request.auth.uid;
       allow delete: if request.auth != null && resource.data.userId == request.auth.uid;
     }
   }
