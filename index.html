@@ -33,6 +33,7 @@
       <a href="#prices" data-nav="prices">Prices</a>
       <a href="#share" data-nav="share">Share a price</a>
       <a href="#signup" data-nav="signup" id="nav-account">Sign up</a>
+      <a href="#moderate" data-nav="moderate" id="nav-moderate" hidden>Moderate</a>
     </nav>
   </header>
 
@@ -185,7 +186,23 @@
           </div>
       </section>
     </div>
+        <!-- Moderator page -->
+    <div data-view="moderate" hidden>
+      <section class="band">
+        <div class="wrap">
+          <h1>Moderate</h1>
+          <p class="lede" id="mod-denied">This page is for moderators. Log in with a moderator account to review flagged prices.</p>
+          <div id="mod-panel" hidden>
+            <p class="lede">Review flagged prices. Remove the ones that are wrong, or dismiss the flags if the price is fine.</p>
+            <div class="stats" id="mod-stats"></div>
+            <h2>Flagged prices</h2>
+            <div class="grid" id="mod-list"></div>
+          </div>
+        </div>
+      </section>
+    </div>
   </main>
+
 
   <footer>
     <div class="wrap">
