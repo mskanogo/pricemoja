@@ -105,9 +105,9 @@ function priceCard(p) {
     if (p.count < 3) card.append(el("p", "note", "Only a few reports so far. More shared prices make this range more reliable."));
   }
   if (p.items && !p.count) card.append(el("p", "note", "Every shared price for this item has been disputed or flagged."));
-  if (p.reference) card.append(el("p", "note", `Reference range: KES ${p.reference.low.toLocaleString()} to ${p.reference.high.toLocaleString()}`));
+  if (p.reference) card.append(el("p", "note", `Sample reference range: KES ${p.reference.low.toLocaleString()} to ${p.reference.high.toLocaleString()}`));
   if (p.service) card.append(el("span", "tag tag--service", "Service"), " ");
-  p.sources.forEach((s) => card.append(el("span", s === "PPRA" ? "tag tag--ppra" : "tag", s), " "));
+  p.sources.forEach((s) => card.append(el("span", s === "PPRA" ? "tag tag--ppra" : s === "Sample" ? "tag tag--sample" : "tag", s), " "));
   if (p.items) card.append(reviewList(p));
   return card;
 }
