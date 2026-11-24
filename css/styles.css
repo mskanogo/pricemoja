@@ -93,3 +93,13 @@ footer p { margin: 0; }
 .row2 { display: grid; gap: 1rem; grid-template-columns: 2fr 1fr; }
 .mine-title { margin-top: 2.5rem; }
 .card > .btn { margin-top: .5rem; }
+
+/* Review shared prices */
+.reviews { margin-top: .75rem; font-size: .9375rem; }
+.reviews summary { cursor: pointer; font-weight: 700; color: var(--brand); }
+.review { padding: .6rem 0; border-top: 1px solid var(--line); }
+.review:first-of-type { margin-top: .5rem; }
+.review__top { display: flex; flex-wrap: wrap; justify-content: space-between; gap: .25rem .75rem; font-weight: 600; }
+.review__actions { display: flex; flex-wrap: wrap; align-items: center; gap: .4rem; margin-top: .4rem; }
+.review__actions .btn[aria-pressed="true"] { color: #fff; background: var(--brand); }
+.review--left-out { opacity: .65; }
