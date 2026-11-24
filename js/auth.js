@@ -15,7 +15,7 @@ const messages = {
   "auth/operation-not-allowed": "Email sign-in is not switched on in the Firebase console yet.",
   "permission-denied": "Not allowed. Make sure you are logged in and the Firestore rules are published."
 };
-export const friendlyError = (err) => messages[err.code] || "Something went wrong. Please try again.";
+export const friendlyError = (err) => messages[err.code] || err.userMessage || "Something went wrong. Please try again.";
 
 export async function signUp({ name, email, password, language }) {
   const cred = await createUserWithEmailAndPassword(auth, email, password);

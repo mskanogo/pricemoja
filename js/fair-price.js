@@ -53,3 +53,22 @@ export function groupSubmissions(submissions, tallies = {}) {
     ...(g.amounts.length ? summarise(g.amounts) : { count: 0, median: 0, low: 0, high: 0 })
   }));
 }
+
+// Reads reference prices typed one per line as: category, low, high, item name (the item name may contain commas).
+export function parseReferenceList(text) {
+  const categories = ["transport", "groceries", "market"];
+  const rows = [];
+  const errors = [];
+  text.split(/\r?\n/).forEach((line, index) => {
+    if (!line.trim()) return;
+    const [category, low, high, ...rest] = line.split(",").map((part) => part.trim());
+    const name = rest.join(", ").trim();
+    const lowNumber = Number(low);
+    const highNumber = Number(high);
+    if (!categories.includes((category || "").toLowerCase())) errors.push(`Line ${index + 1}: the category must be transport, groceries or market.`);
+    else if (!low || !high || !Number.isFinite(lowNumber) || !Number.isFinite(highNumber) || lowNumber <= 0 || lowNumber > highNumber) errors.push(`Line ${index + 1}: low and high must be numbers, and low cannot be above high.`);
+    else if (!name || name.length > 80) errors.push(`Line ${index + 1}: add an item name of up to 80 characters.`);
+    else rows.push({ category: category.toLowerCase(), low: lowNumber, high: highNumber, name });
+  });
+  return { rows, errors };
+}

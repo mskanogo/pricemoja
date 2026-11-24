@@ -11,7 +11,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/styles.css?v2">
+  <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
   <a class="skip" href="#main">Skip to content</a>
@@ -183,10 +183,10 @@
               <p class="note" id="rep-next"></p>
             </section>
           </div>
-          </div>
+        </div>
       </section>
     </div>
-        <!-- Moderator page -->
+      <!-- Moderator page -->
     <div data-view="moderate" hidden>
       <section class="band">
         <div class="wrap">
@@ -197,18 +197,34 @@
             <div class="stats" id="mod-stats"></div>
             <h2>Flagged prices</h2>
             <div class="grid" id="mod-list"></div>
+
+            <h2 class="mine-title">Reference prices</h2>
+            <p class="note">Add or update official reference prices. Type one per line: category, low, high, item name. Importing an item that is already there replaces it.</p>
+            <form class="signup" id="ref-form" novalidate>
+              <div class="field"><label for="ref-list">Price list</label>
+                <textarea id="ref-list" name="priceList" rows="6" required placeholder="groceries, 90, 140, Tomatoes, 1 kg&#10;transport, 800, 1200, Moto ride, town to airport"></textarea>
+                <small class="note">Categories: transport, groceries or market.</small>
+              </div>
+              <div class="field"><label for="ref-currency">Currency</label>
+                <select id="ref-currency" name="currency"><option>KES</option><option>RWF</option><option>UGX</option><option>TZS</option><option>USD</option></select>
+              </div>
+              <button class="btn btn--primary" type="submit">Import reference prices</button>
+              <p class="form-status" role="status"></p>
+            </form>
+            <div class="grid" id="ref-view"></div>
           </div>
         </div>
       </section>
     </div>
-  </main>
 
+  </main>
 
   <footer>
     <div class="wrap">
-      <p>Cards marked Sample are placeholders, not real reports. Official reference prices will come from the Public Procurement Regulatory Authority (PPRA). Community prices are shared by users and can vary by vendor and day.</p>    </div>
+      <p>Cards marked Sample are placeholders, not real reports. Official reference prices will come from the Public Procurement Regulatory Authority (PPRA). Community prices are shared by users and can vary by vendor and day.</p>
+    </div>
   </footer>
 
- <script type="module" src="js/app.js?v=5"></script>
+  <script type="module" src="js/app.js?v=8"></script>
 </body>
 </html>
