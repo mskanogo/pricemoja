@@ -1,6 +1,12 @@
 {
   "hosting": {
     "public": ".",
-    "ignore": ["firebase.json", "**/.*", "**/node_modules/**", "README.md", "firestore.rules"]
+    "ignore": ["firebase.json", "**/.*", "**/node_modules/**", "README.md", "firestore.rules"],
+    "headers": [
+      {
+        "source": "**/*.@(js|css|html|json)",
+        "headers": [{ "key": "Cache-Control", "value": "no-cache" }]
+      }
+    ]
   }
 }
