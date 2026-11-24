@@ -4,7 +4,8 @@ import { signUp, logIn, logOut, onUser, friendlyError } from "./auth.js";
 import { imageKey, loadImages, compress, saveImage } from "./images.js";
 import { loadSubmissions, addSubmission, withdrawSubmission } from "./submissions.js";
 import { samplePrices } from "./sample-prices.js";
-import { slug, groupSubmissions } from "./fair-price.js";
+import { slug, groupSubmissions, tally } from "./fair-price.js";
+import { loadVotes, loadFlags, setVote, clearVote, addFlag, removeFlag } from "./reviews.js";
 
 /* ---------- Page navigation ---------- */
 const views = [...document.querySelectorAll("[data-view]")];
@@ -41,6 +42,10 @@ const photoHint = document.getElementById("photo-hint");
 let category = "transport";
 let images = {};
 let community = []; // prices shared by users
+let tallies = {}; // confirmations, disputes and flags for each shared price
+let myVotes = {}; // the signed-in person's votes
+let myFlags = new Set(); // prices the signed-in person has flagged
+const openCards = new Set(); // cards whose review list is open
 
 async function uploadPhoto(file, item, key, status) {
   if (!file) return;
@@ -58,6 +63,7 @@ async function uploadPhoto(file, item, key, status) {
 }
 
 function priceText(p) {
+  if (p.items && !p.count) return "No fair range yet";
   const money = (n) => Number(n).toLocaleString();
   const cur = p.currency || "KES";
   return p.low === p.high ? `${cur} ${money(p.low)}` : `${cur} ${money(p.low)} to ${money(p.high)}`;
@@ -98,24 +104,116 @@ function priceCard(p) {
     card.append(el("p", "note", `Median ${p.currency} ${p.median.toLocaleString()} from ${p.count} shared ${p.count === 1 ? "price" : "prices"}`));
     if (p.count < 3) card.append(el("p", "note", "Only a few reports so far. More shared prices make this range more reliable."));
   }
+  if (p.items && !p.count) card.append(el("p", "note", "Every shared price for this item has been disputed or flagged."));
   if (p.reference) card.append(el("p", "note", `Reference range: KES ${p.reference.low.toLocaleString()} to ${p.reference.high.toLocaleString()}`));
   if (p.service) card.append(el("span", "tag tag--service", "Service"), " ");
   p.sources.forEach((s) => card.append(el("span", s === "PPRA" ? "tag tag--ppra" : "tag", s), " "));
+  if (p.items) card.append(reviewList(p));
   return card;
+}
+
+/* ---------- Confirm, dispute and flag ---------- */
+function reviewButton(label, onClick, pressed) {
+  const button = el("button", "btn btn--small", label);
+  button.type = "button";
+  if (pressed !== undefined) button.setAttribute("aria-pressed", String(pressed));
+  button.addEventListener("click", onClick);
+  return button;
+}
+
+async function castVote(s, value, status) {
+  const uid = auth.currentUser.uid;
+  try {
+    if (myVotes[s.id] === value) await clearVote(s.id, uid);
+    else await setVote(s.id, uid, value);
+    await refreshReviews();
+  } catch (err) {
+    status.textContent = friendlyError(err);
+  }
+}
+
+async function flagPrice(s, reason, status) {
+  try {
+    await addFlag(s.id, auth.currentUser.uid, reason);
+    await refreshReviews();
+  } catch (err) {
+    status.textContent = friendlyError(err);
+  }
+}
+
+async function unflagPrice(s, status) {
+  try {
+    await removeFlag(s.id, auth.currentUser.uid);
+    await refreshReviews();
+  } catch (err) {
+    status.textContent = friendlyError(err);
+  }
+}
+
+function reviewRow(s, currency) {
+  const t = tallies[s.id] || { up: 0, down: 0, flags: 0 };
+  const row = el("div", s.counted ? "review" : "review review--left-out");
+  const top = el("div", "review__top");
+  top.append(el("span", "num", `${currency} ${Number(s.amount).toLocaleString()}`), el("span", "note", `${s.location}, shared by ${s.userName || "a user"}`));
+  row.append(top, el("p", "note", `${t.up} confirmed, ${t.down} disputed, ${t.flags} flagged${s.counted ? "" : ". Left out of the range."}`));
+
+  const user = auth.currentUser;
+  if (!user) return row;
+  if (s.userId === user.uid) {
+    row.append(el("p", "note", "This is your price."));
+    return row;
+  }
+  const status = el("p", "note");
+  status.setAttribute("role", "status");
+  const actions = el("div", "review__actions");
+  actions.append(
+    reviewButton("Confirm", () => castVote(s, 1, status), myVotes[s.id] === 1),
+    reviewButton("Dispute", () => castVote(s, -1, status), myVotes[s.id] === -1)
+  );
+  if (myFlags.has(s.id)) actions.append(el("span", "note", "You flagged this price."), reviewButton("Remove flag", () => unflagPrice(s, status)));
+  else actions.append(reviewButton("Flag as spam", () => flagPrice(s, "spam", status)), reviewButton("Flag as fraud", () => flagPrice(s, "fraud", status)));
+  row.append(actions, status);
+  return row;
+}
+
+function reviewList(p) {
+  const cardKey = `${p.category}|${slug(p.name)}|${p.currency}`;
+  const details = el("details", "reviews");
+  details.open = openCards.has(cardKey);
+  details.addEventListener("toggle", () => { if (details.open) openCards.add(cardKey); else openCards.delete(cardKey); });
+  details.append(el("summary", "", `Review the ${p.items.length} shared ${p.items.length === 1 ? "price" : "prices"}`));
+  if (!auth.currentUser) details.append(el("p", "note", "Log in to confirm, dispute or flag a price."));
+  p.items.forEach((s) => details.append(reviewRow(s, p.currency)));
+  return details;
+}
+
+async function refreshReviews() {
+  let votes = [];
+  let flags = [];
+  try {
+    [votes, flags] = await Promise.all([loadVotes(), loadFlags()]);
+  } catch (err) {
+    console.warn("Could not load votes and flags. Check your Firestore rules.", err.code || err);
+  }
+  const uid = auth.currentUser ? auth.currentUser.uid : null;
+  tallies = tally(votes, flags);
+  myVotes = Object.fromEntries(votes.filter((v) => v.userId === uid).map((v) => [v.submissionId, v.value]));
+  myFlags = new Set(flags.filter((f) => f.userId === uid).map((f) => f.submissionId));
+  renderPrices();
 }
 
 // Combines shared prices into one fair range per item. Sample prices fill in for items nobody has shared yet.
 function buildRows() {
   const keyOf = (category, name) => `${category}|${slug(name)}`;
   const reference = new Map(samplePrices.map((p) => [keyOf(p.category, p.name), p]));
-  const groups = groupSubmissions(community);
+  const groups = groupSubmissions(community, tallies);
   const shared = new Set(groups.map((g) => keyOf(g.category, g.name)));
 
   const fromCommunity = groups.map((g) => {
     const ref = reference.get(keyOf(g.category, g.name));
     return {
       category: g.category, name: ref ? ref.name : g.name, place: ref ? ref.place : "Shared by the community",
-      low: Math.round(g.low), high: Math.round(g.high), median: Math.round(g.median), count: g.count, currency: g.currency,
+      low: Math.round(g.low), high: Math.round(g.high), median: Math.round(g.median), count: g.count, currency: g.currency, items: g.items,
       sources: ref ? [...new Set([...ref.sources, "Community"])] : ["Community"], service: ref ? ref.service : false, reference: ref
     };
   });
@@ -243,6 +341,7 @@ onUser((user) => {
     : "Sign up to add photos to grocery and market cards.";
   renderPrices();
   renderMine();
+  refreshReviews();
 });
 
 refreshCommunity();
