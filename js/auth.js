@@ -2,7 +2,7 @@
 import {
   createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, onAuthStateChanged, updateProfile
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import { doc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { doc, getDoc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { auth, db } from "./firebase-init.js";
 
 const messages = {
@@ -31,3 +31,13 @@ export async function signUp({ name, email, password, language }) {
 export const logIn = (email, password) => signInWithEmailAndPassword(auth, email, password);
 export const logOut = () => signOut(auth);
 export const onUser = (callback) => onAuthStateChanged(auth, callback);
+
+// Reads the person's role from their profile: "contributor" (the default) or "moderator".
+export async function loadRole(uid) {
+  try {
+    const snapshot = await getDoc(doc(db, "users", uid));
+    return snapshot.exists() ? snapshot.data().role : "contributor";
+  } catch {
+    return "contributor";
+  }
+}

@@ -1,6 +1,6 @@
 // App start-up: page navigation, the prices page, sharing prices, and the sign-up / log-in page.
 import { auth } from "./firebase-init.js";
-import { signUp, logIn, logOut, onUser, friendlyError } from "./auth.js";
+import { signUp, logIn, logOut, onUser, loadRole, friendlyError } from "./auth.js";
 import { imageKey, loadImages, compress, saveImage } from "./images.js";
 import { loadSubmissions, addSubmission, withdrawSubmission } from "./submissions.js";
 import { samplePrices } from "./sample-prices.js";
@@ -47,6 +47,9 @@ let tallies = {}; // confirmations, disputes and flags for each shared price
 let myVotes = {}; // the signed-in person's votes
 let myFlags = new Set(); // prices the signed-in person has flagged
 const openCards = new Set(); // cards whose review list is open
+let allVotes = []; // every vote and flag, for the moderator page
+let allFlags = [];
+let isModerator = false;
 
 async function uploadPhoto(file, item, key, status) {
   if (!file) return;
@@ -197,6 +200,8 @@ async function refreshReviews() {
     console.warn("Could not load votes and flags. Check your Firestore rules.", err.code || err);
   }
   const uid = auth.currentUser ? auth.currentUser.uid : null;
+  allVotes = votes;
+  allFlags = flags;
   tallies = tally(votes, flags);
   myVotes = Object.fromEntries(votes.filter((v) => v.userId === uid).map((v) => [v.submissionId, v.value]));
   myFlags = new Set(flags.filter((f) => f.userId === uid).map((f) => f.submissionId));
@@ -283,6 +288,7 @@ function renderMine() {
 
 /* ---------- Reputation and badges ---------- */
 function renderReputation() {
+  renderModerator(); // this runs whenever prices, votes and flags reload, so keep the moderator page up to date too
   const user = auth.currentUser;
   if (!user) return;
   const rep = reputationFor(user.uid, community, tallies);
@@ -297,6 +303,77 @@ function renderReputation() {
   document.getElementById("rep-next").textContent = rep.next
     ? `${rep.next.needed} more verified ${rep.next.needed === 1 ? "price" : "prices"} to earn "${rep.next.name}".`
     : "You have earned every badge. Thank you for helping newcomers!";
+}
+
+/* ---------- Moderator page ---------- */
+const modPanel = document.getElementById("mod-panel");
+const modDenied = document.getElementById("mod-denied");
+const modStats = document.getElementById("mod-stats");
+const modList = document.getElementById("mod-list");
+
+function updateModerator() {
+  document.getElementById("nav-moderate").hidden = !isModerator;
+  modPanel.hidden = !isModerator;
+  modDenied.hidden = isModerator;
+  renderModerator();
+}
+
+function modCard(s) {
+  const reasons = allFlags.filter((f) => f.submissionId === s.id).map((f) => f.reason);
+  const spam = reasons.filter((r) => r === "spam").length;
+  const t = tallies[s.id] || { up: 0, down: 0, flags: 0 };
+  const card = el("article", "card");
+  const status = el("p", "note");
+  status.setAttribute("role", "status");
+  const actions = el("div", "review__actions");
+  actions.append(
+    reviewButton("Remove price", () => removeAsModerator(s, status)),
+    reviewButton("Dismiss flags", () => dismissFlags(s, status))
+  );
+  card.append(
+    el("h3", "", s.item),
+    el("p", "note", `${s.location} · ${categoryNames[s.category] || s.category}, shared by ${s.userName || "a user"}`),
+    el("p", "price num", `${s.currency} ${Number(s.amount).toLocaleString()}`),
+    el("p", "note", `${spam} flagged as spam, ${reasons.length - spam} as fraud. ${t.up} confirmed, ${t.down} disputed.`),
+    actions, status
+  );
+  return card;
+}
+
+function renderModerator() {
+  if (!isModerator) return;
+  const flaggedIds = new Set(allFlags.map((f) => f.submissionId));
+  const flagged = community.filter((s) => flaggedIds.has(s.id));
+  const people = new Set([...community.map((s) => s.userId), ...allVotes.map((v) => v.userId), ...allFlags.map((f) => f.userId)]);
+  modStats.replaceChildren(...[
+    ["Shared prices", community.length], ["Flagged prices", flagged.length],
+    ["Votes cast", allVotes.length], ["Active people", people.size]
+  ].map(([label, value]) => {
+    const stat = el("div", "stat");
+    stat.append(el("strong", "num", String(value)), el("span", "note", label));
+    return stat;
+  }));
+  modList.replaceChildren(...(flagged.length ? flagged.map(modCard) : [el("p", "note", "No flagged prices. Nothing to review.")]));
+}
+
+async function removeAsModerator(s, status) {
+  if (!window.confirm("Remove this price for everyone?")) return;
+  try {
+    await withdrawSubmission(s.id);
+    await refreshCommunity();
+    await refreshReviews();
+  } catch (err) {
+    status.textContent = friendlyError(err);
+  }
+}
+
+async function dismissFlags(s, status) {
+  try {
+    await Promise.all(allFlags.filter((f) => f.submissionId === s.id).map((f) => removeFlag(s.id, f.userId)));
+    await refreshReviews();
+  } catch (err) {
+    status.textContent = friendlyError(err);
+  }
 }
 
 /* ---------- Forms (sign up, log in, share a price) ---------- */
@@ -352,6 +429,9 @@ document.getElementById("logout").addEventListener("click", () => logOut());
 
 onUser((user) => {
   navAccount.textContent = user ? "Account" : "Sign up";
+  isModerator = false;
+  updateModerator();
+  if (user) loadRole(user.uid).then((role) => { isModerator = role === "moderator"; updateModerator(); });
   guestPanel.hidden = Boolean(user);
   userPanel.hidden = !user;
   shareGuest.hidden = Boolean(user);

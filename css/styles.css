@@ -114,3 +114,8 @@ footer p { margin: 0; }
 .badges { display: grid; gap: .5rem; margin: 1rem 0; padding: 0; list-style: none; }
 .badge-item { display: grid; padding: .6rem .8rem; background: #fff; border: 1px dashed var(--muted); border-radius: 10px; opacity: .75; }
 .badge-item--earned { background: var(--sun); border: 2px solid var(--orange); opacity: 1; }
+
+/* Moderator dashboard */
+.stats { display: grid; gap: .75rem; grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr)); margin: 1.5rem 0 2rem; }
+.stat { display: grid; padding: .9rem 1rem; background: var(--sun-soft); border: 1px solid var(--line); border-radius: 12px; }
+.stat strong { font-size: 1.75rem; line-height: 1.1; }
