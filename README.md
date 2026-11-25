@@ -332,7 +332,7 @@ This is a prototype. The following features in the SRS are **not built or only p
 - **Editing a submission (FR2.3):** a person can withdraw their own price and share it again, but cannot edit it.
 - **Search by location (FR3.1):** search covers category and item name only.
 - **Preferred language (FR1.3):** the choice is saved to the profile, but the interface is only in English.
-- **Overcharge alert (FR5.1):** this is a check on the page where the user types a quote. Push notifications are not built.
+- **Overcharge alert (FR5.1):** works as a warning shown on the card when you check a quote. Push notifications to phones are planned for a later version.
 - **Phone registration and SMS verification:** planned, not built. Sign-up uses email and password.
 - **Interactive map and GPS tagging:** planned, not built.
 - **Working offline:** the app has a web app manifest but no offline support.
