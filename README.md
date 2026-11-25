@@ -7,10 +7,10 @@ PriceMoja helps newcomers to a city check what everyday things should cost (tran
 | | |
 |---|---|
 | **Live app** | https://pricemoja-8986a.web.app |
-| **Demo video** | [ADD YOUR VIDEO LINK] |
-| **SRS document** | [ADD YOUR SRS LINK] |
+| **Demo video** | https://youtu.be/u03C4TEJMfI |
+| **SRS document** | https://docs.google.com/document/d/1UuvJLJHkV2AicJ1fwE6UBLKZnxee6iz8klk1YE4DYaQ/edit?usp=sharing |
 | **GitHub repository** | https://github.com/mskanogo/pricemoja |
-| **Author** | Martha Stacey Kanogo, African Leadership University (ALU) |
+| **Author** | Martha Stacey Kanogo |
 
 > **For graders: the quickest way to try it.** Open the live app link above. You can browse prices without an account. To share, confirm or flag prices, click **Sign up** and create an account with any email address and a password of at least 8 characters. To run the code on your own computer, jump to [Getting started](#getting-started).
 
