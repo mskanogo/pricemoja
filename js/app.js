@@ -4,7 +4,7 @@ import { signUp, logIn, logOut, onUser, loadRole, friendlyError } from "./auth.j
 import { imageKey, loadImages, compress, saveImage } from "./images.js";
 import { loadSubmissions, addSubmission, withdrawSubmission } from "./submissions.js";
 import { samplePrices } from "./sample-prices.js";
-import { slug, groupSubmissions, tally, parseReferenceList } from "./fair-price.js";
+import { slug, groupSubmissions, tally, parseReferenceList, judgeQuote } from "./fair-price.js";
 import { loadReferences, saveReferences, removeReference } from "./reference.js";
 import { reputationFor } from "./reputation.js";
 import { loadVotes, loadFlags, setVote, clearVote, addFlag, removeFlag } from "./reviews.js";
@@ -123,8 +123,58 @@ function priceCard(p) {
   }
   if (p.service) card.append(el("span", "tag tag--service", "Service"), " ");
   p.sources.forEach((s) => card.append(el("span", s === "PPRA" ? "tag tag--ppra" : s === "Sample" ? "tag tag--sample" : "tag", s), " "));
+  if (!p.items || p.count) card.append(quoteChecker(p));
   if (p.items) card.append(reviewList(p));
   return card;
+}
+
+/* ---------- Overcharge check ---------- */
+// Lets someone type the price they were quoted and warns them if it is above the fair range.
+function quoteChecker(p) {
+  const cur = p.currency || "KES";
+  const basis = p.items ? "fair range" : p.sources.includes("PPRA") ? "reference range" : "sample range";
+  const money = (n) => Number(n).toLocaleString();
+  const target = p.median || Math.round((p.low + p.high) / 2);
+
+  const form = el("form", "quote");
+  const input = el("input");
+  input.type = "number";
+  input.min = "1";
+  input.step = "any";
+  input.inputMode = "decimal";
+  input.required = true;
+  input.placeholder = `Quoted price (${cur})`;
+  input.id = `quote-${slug(p.name)}-${cur}`;
+  const label = el("label", "sr-only", `What were you quoted for ${p.name}?`);
+  label.htmlFor = input.id;
+  const button = el("button", "btn btn--small", "Check quote");
+  button.type = "submit";
+  const result = el("p", "quote__result");
+  result.setAttribute("role", "status");
+
+  form.addEventListener("submit", (event) => {
+    event.preventDefault();
+    const quoted = Number(input.value);
+    if (!(quoted > 0)) {
+      result.className = "quote__result";
+      result.textContent = "Enter the price you were quoted.";
+      return;
+    }
+    const { verdict, percent } = judgeQuote(quoted, p.low, p.high);
+    const range = `${cur} ${money(p.low)} to ${money(p.high)}`;
+    if (verdict === "above") {
+      result.className = "quote__result quote__result--warn";
+      result.textContent = `Warning: ${cur} ${money(quoted)} is ${percent}% above the top of the ${basis} (${range}). You may be overcharged. Try offering about ${cur} ${money(target)}.`;
+    } else if (verdict === "within") {
+      result.className = "quote__result quote__result--ok";
+      result.textContent = `${cur} ${money(quoted)} is within the ${basis} (${range}). That looks fair.`;
+    } else {
+      result.className = "quote__result quote__result--ok";
+      result.textContent = `${cur} ${money(quoted)} is ${percent}% below the ${basis} (${range}). Good price, but check the quality or quantity.`;
+    }
+  });
+  form.append(label, input, button, result);
+  return form;
 }
 
 /* ---------- Confirm, dispute and flag ---------- */

@@ -72,3 +72,10 @@ export function parseReferenceList(text) {
   });
   return { rows, errors };
 }
+
+// Compares a quoted price with a fair range. `percent` is how far outside the range the quote is.
+export function judgeQuote(quoted, low, high) {
+  if (quoted > high) return { verdict: "above", percent: Math.round(((quoted - high) / high) * 100) };
+  if (quoted < low) return { verdict: "below", percent: Math.round(((low - quoted) / low) * 100) };
+  return { verdict: "within", percent: 0 };
+}
